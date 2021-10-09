@@ -27,7 +27,7 @@
                 Profit Per Share
             </dt>
             <dd>
-                @Model.ProfitPerShare
+                @String.Format("{0:0.##}", Model.ProfitPerShare)
             </dd>
             <dt>
                 Total Deposits
@@ -39,7 +39,7 @@
                 Last Balance
             </dt>
             <dd>
-                @Model.LastBalance
+                @String.Format("{0:0.##}", Model.LastBalance)
             </dd>
             <dt>
                 Total Transactions
@@ -51,7 +51,7 @@
                 Dividend Balance
             </dt>
             <dd>
-                @Model.DividendBalance
+                @String.Format("{0:0.##}", Model.DividendBalance)
             </dd>
             <dt>
                 Total Claims
@@ -79,22 +79,28 @@
             <th style="text-align: center">
                 Payout
             </th>
+            <th style="text-align: center">
+                Rolls
+            </th>
         </tr>
     </thead>
     <tbody>
         @foreach (Player player in Model.Players)
         {
-            <tr>
-                <td>
-                    @Html.DisplayFor(modelItem => player.Address)
-                </td>
-                <td>
-                    @Html.DisplayFor(modelItem => player.AmmountOfTokens)
-                </td>
-                <td>
-                    @Html.DisplayFor(modelItem => player.Payout)
-                </td>
-            </tr>
+        <tr>
+            <td>
+                @Html.DisplayFor(modelItem => player.Address)
+            </td>
+            <td>
+                @Html.DisplayFor(modelItem => player.AmmountOfTokens)
+            </td>
+            <td>
+                @String.Format("{0:0.##}", player.Payout)
+            </td>
+            <td>
+                @Html.DisplayFor(modelItem => player.Rolls)
+            </td>
+        </tr>
         }
     </tbody>
 </table>

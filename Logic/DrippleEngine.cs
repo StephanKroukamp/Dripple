@@ -12,6 +12,8 @@ namespace Dripple.Logic
 
         public double AmmountOfTokens { get; set; }
 
+        public int Rolls { get; set; }
+
         public Player(Guid address)
         {
             Address = address;
@@ -33,7 +35,7 @@ namespace Dripple.Logic
 
         public const double payoutRate = 2;
 
-        public const double magnitude = 2 * 64;
+        public double magnitude = Math.Pow(2, 64);
 
         public const double balanceInterval = 6; // hours
 
@@ -62,11 +64,11 @@ namespace Dripple.Logic
 
         }
 
-        public double Buy(Player player, double buyAmmount)
+        public double Buy(Guid address, double buyAmmount)
         {
             TotalDeposits += buyAmmount;
 
-            double ammount = PurchaseTokens(player, buyAmmount);
+            double ammount = PurchaseTokens(address, buyAmmount);
 
             Distribute();
 
@@ -78,26 +80,27 @@ namespace Dripple.Logic
             DividendBalance += ammount;
         }
 
-        public void Reinvest(Player player)
+        public void Reinvest(Guid address)
         {
-            double dividends = DividendsOf(player);
+            double dividends = DividendsOf(address);
 
-            player.Payout += dividends * magnitude;
+            Players.First(x => x.Address == address).Payout += dividends * magnitude;
 
-            double tokens = PurchaseTokens(player, dividends);
+            Players.First(x => x.Address == address).Rolls++;
+
+            double tokens = PurchaseTokens(address, dividends);
 
             Distribute();
         }
 
-        public void Withdraw(Player player)
+        public void Withdraw(Guid address)
         {
-            double dividends = DividendsOf(player);
+            double dividends = DividendsOf(address);
 
-            player.Payout += dividends * magnitude;
-
-            // transfers credit to token
+            Players.First(x => x.Address == address).Payout += dividends * magnitude;
 
             TotalTransactions++;
+
             TotalClaims += dividends;
 
             Distribute();
@@ -112,37 +115,39 @@ namespace Dripple.Logic
             // burn the sold tokens
             TokenSupply -= ammountOfTokens;
 
-            player.AmmountOfTokens -= ammountOfTokens;
+            Players.First(x => x.Address == player.Address).AmmountOfTokens -= ammountOfTokens;
 
             double updatedPayouts = ProfitPerShare * ammountOfTokens + (taxedEtherium * magnitude);
 
-            player.Payout -= updatedPayouts;
+            Players.First(x => x.Address == player.Address).AmmountOfTokens -= updatedPayouts;
 
             AllocateFees(undividedDividends);
 
             Distribute();
         }
 
-        public bool Transfers(Player from, Player to, double ammountOfTokens)
+        public bool Transfers(Guid from, Guid to, double ammountOfTokens)
         {
             if (DividendsOf(from) > 0)
             {
                 Withdraw(from);
             }
 
-            from.AmmountOfTokens -= ammountOfTokens;
-            to.AmmountOfTokens += ammountOfTokens;
+            Players.First(x => x.Address == from).AmmountOfTokens -= ammountOfTokens;
+            Players.First(x => x.Address == to).AmmountOfTokens += ammountOfTokens;
 
-            from.Payout -= ProfitPerShare * ammountOfTokens;
-            to.Payout += ProfitPerShare * ammountOfTokens;
+            Players.First(x => x.Address == from).Payout -= ProfitPerShare * ammountOfTokens;
+            Players.First(x => x.Address == to).Payout += ProfitPerShare * ammountOfTokens;
 
             TotalTransactions++;
 
             return true;
         }
 
-        public double DividendsOf(Player player)
+        public double DividendsOf(Guid address)
         {
+            Player player = Players.First(x => x.Address.Equals(address));
+
             double dividends = ((ProfitPerShare * player.AmmountOfTokens) - player.Payout) / magnitude;
 
             return dividends;
@@ -150,7 +155,7 @@ namespace Dripple.Logic
 
         public Player GetPlayer(Guid address)
         {
-            Player player = Players.Where(x => x.Address.Equals(address)).FirstOrDefault();
+            Player player = Players.First(x => x.Address == address);
 
             return player;
         }
@@ -206,8 +211,15 @@ namespace Dripple.Logic
             return taxedEth;
         }
 
-        private double PurchaseTokens(Player player, double buyAmmount)
+        private double PurchaseTokens(Guid address, double buyAmmount)
         {
+            if (!Players.Select(x => x.Address).ToList().Contains(address))
+            {
+                Players.Add(new Player(address));
+            }
+
+            Player player = Players.First(x => x.Address.Equals(address));
+
             TotalTransactions++;
 
             double undividedDividends = (buyAmmount * entryFee) / 100;
@@ -227,18 +239,10 @@ namespace Dripple.Logic
 
             double updatedPayouts = ProfitPerShare * ammountOfTokens;
 
-            if (Players.Select(x => x.Address).ToList().Contains(player.Address))
-            {
-                player = Players.Where(x => x.Address.Equals(player.Address)).FirstOrDefault();
-            }
-            else
-            {
-                Players.Add(player);
-            }
+            
 
-            player.Payout += updatedPayouts;
-
-            player.AmmountOfTokens = ammountOfTokens;
+            Players.First(x => x.Address == player.Address).Payout += updatedPayouts;
+            Players.First(x => x.Address == player.Address).AmmountOfTokens = ammountOfTokens;
 
             return ammountOfTokens;
         }

@@ -1,7 +1,11 @@
 ﻿using Dripple.Logic;
 using Dripple.Models;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Rendering;
+using System;
+using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq;
 
 namespace Dripple.Controllers
 {
@@ -31,6 +35,16 @@ namespace Dripple.Controllers
             return View();
         }
 
+        public IActionResult Reinvest()
+        {
+            ReinvestModel reinvestModel = new ReinvestModel
+            {
+                AvailableAddresses = Dripple.Players.Select(x => x.Address).ToList().Select(x => new SelectListItem(x.ToString(), x.ToString())).ToList()
+            };
+
+            return View(reinvestModel);
+        }
+
         [HttpPost]
         public IActionResult DonatePool(DonatePoolModel donatePoolModel)
         {
@@ -42,9 +56,15 @@ namespace Dripple.Controllers
         [HttpPost]
         public IActionResult Buy(BuyModel buyModel)
         {
-            Player player = new Player(buyModel.Address);
-            
-            Dripple.Buy(player, buyModel.Ammount);
+            Dripple.Buy(buyModel.Address, buyModel.Ammount);
+
+            return RedirectToAction("Stats");
+        }
+
+        [HttpPost]
+        public IActionResult Reinvest(ReinvestModel reinvestModel)
+        {
+            Dripple.Reinvest(reinvestModel.Address);
 
             return RedirectToAction("Stats");
         }

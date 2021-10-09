@@ -1,0 +1,24 @@
+﻿@model ReinvestModel
+
+@{
+    ViewData["Title"] = "Reinvest";
+}
+
+<h2>Reinvest</h2>
+
+<hr />
+
+<div class="row">
+    <div class="col-md-4">
+        <form asp-action="Reinvest">
+            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+
+            <select asp-for="Address" class="form-control" asp-items="Model.AvailableAddresses">
+            </select>
+
+            <div class="form-group">
+                <input type="submit" value="Reinvest" class="btn btn-default" />
+            </div>
+        </form>
+    </div>
+</div>
